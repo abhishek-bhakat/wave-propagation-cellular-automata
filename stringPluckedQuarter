@@ -1,0 +1,99 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+noOfParticles=101 #there are 16 black and and 15 white particles (total 51)
+noOfEvolution=1000
+L=1 #m
+cr=1 #m/s
+tSF=(L/((noOfParticles-1)*np.sqrt(cr)))
+###############DONE#########################################
+x=np.linspace(0,.5,51)
+displacement=(0.1/0.5)*x
+
+finalDisplacement=np.concatenate((displacement,np.flip(displacement)[1:]))
+#print(finalDisplacement)
+############################################################
+positionArray=finalDisplacement #first is the black particles
+aVector= (1/(noOfParticles-1)) #spring vector
+
+positionArrayTemp=positionArray.copy()
+#print("-----original configuration-----")
+#print(positionArray)
+
+black=1 #start with black particles
+white=0
+
+resultQuater=np.zeros(noOfEvolution+1)
+resultMiddle=np.zeros(noOfEvolution+1)
+resultQuater[0]=positionArray[25]
+resultMiddle[0]=positionArray[50]
+
+for t in range(noOfEvolution):
+    #print("Evolution No:", t+1)
+    if black:  
+        for i in range(2,noOfParticles-1,2):
+            positionArrayTemp[i]=positionArray[i-1]+positionArray[i+1]-positionArray[i]
+        #print("-----black(odd) particles move-----")    
+        #print(positionArrayTemp)    
+
+    if white:
+        for i in range(1,noOfParticles-1,2):
+            positionArrayTemp[i]=positionArray[i-1]+positionArray[i+1]-positionArray[i]
+        #print("-----white(even) particles move-----")    
+        #print(positionArrayTemp)
+        
+    #positionArrayTemp=positionArrayTemp-positionArray
+    resultMiddle[t+1]=positionArrayTemp[50]
+    resultQuater[t+1]=(positionArrayTemp/0.1)[25]
+    positionArray=positionArrayTemp.copy()
+    white = not white
+    black = not black
+
+##### plot #####
+xx=np.linspace(1,1001,1001)
+plt.figure(figsize=(10,6))
+plt.scatter(((xx*(tSF))/2),(resultQuater),facecolors='none',label="CA Solution",color='#FC766AFF')
+plt.xlabel("Non Dimensionl Time (t/T)")
+plt.ylabel("Non Dimensionl Displacement (u/$\\delta $)")
+plt.title("DISPLACEMENT OF THE STRING AT X=L/4")
+#plt.yrange(-0.06,0.06)
+#plt.grid()
+#plt.savefig("stringPluckedAtMidQuater.svg")
+
+#plt.figure(figsize=(10,6))
+#plt.scatter((xx*(tSF)),(resultMiddle),facecolors='none',label="CA Solution",color='#FC766AFF')
+#plt.xlabel("Time(in seconds)")
+#plt.ylabel("Displacement")
+#plt.title("DISPLACEMENT AT THE MIDPOINT OF THE STRING")
+########################################################################
+
+def u(t, H, LL, c, terms=100):
+    result = 0
+    for n in range(terms):
+        term = ((-1) ** n) / ((2 * n + 1) ** 2)
+        term *= np.sin(((2 * n + 1) * np.pi * LL) / (4 * LL)) * np.cos(((2 * n + 1) * np.pi * c * t) / LL)
+        result += term
+    result *= (8 * H) / np.pi**2
+    return result
+
+# Define constants
+H = 0.1  # Replace with your value
+LL = 1.0  # Replace with your value
+c = 1.0  # Replace with your value
+
+# Generate t values
+t_values = np.linspace(0, 10, 5000)
+
+# Calculate u(t) for each t
+u_values = u(t_values, H, LL, c)
+
+
+#plt.figure(figsize=(10,6))
+plt.plot(t_values/2, u_values/0.1, label='Analytical Solution',color='#5B84B1FF')
+#plt.xlim(0,10)
+#plt.ylim(-0.06,0.06)
+#plt.ylim(-9*10000,9*10000)
+plt.grid()
+plt.legend(loc='upper right')
+plt.savefig('stringPluckedQuaterL.svg',format='svg')
+plt.show()
