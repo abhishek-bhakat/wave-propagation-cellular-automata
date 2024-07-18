@@ -1,0 +1,95 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+noOfParticles=51 #there are 16 black and and 15 white particles (total 51)
+noOfEvolution=1000
+F=200 #Newton
+L=1 #Meter
+A=1/10000 #sqm
+E=200 #GPa
+roh=7860 #kg/m3
+dl=((F*L*1000)/(A*1000*1000*E*1000))/1000 # Meter
+TSF=(L/((noOfParticles-1)*(np.sqrt((E*1000000000)/roh))))
+positionArray=np.linspace(0,L+dl,noOfParticles)#first is the black particles
+print(positionArray)
+aVector= (1/(noOfParticles-1)) #spring vector
+positionArrayTemp=positionArray.copy()
+#print("-----original configuration-----")
+#print(positionArray)
+black=1 #start with black particles
+white=0
+result=np.zeros(noOfEvolution+1)
+resultMiddle=np.zeros(noOfEvolution+1)
+result[0]=L+dl
+resultMiddle[0]=positionArray[int((noOfParticles-1)/2)]
+
+for t in range(noOfEvolution):
+    #print("Evolution No:", t+1)
+    if black:  
+        for i in range(2,noOfParticles,2):
+            if(i==noOfParticles-1):
+                positionArrayTemp[i]=(2*(positionArray[i-1]+aVector))-(positionArray[i])
+                continue
+            positionArrayTemp[i]=positionArray[i-1]+positionArray[i+1]-positionArray[i]
+        #print("-----black(odd) particles move-----")    
+        #print(positionArrayTemp) 
+
+    if white:
+        for i in range(1,noOfParticles,2):
+            positionArrayTemp[i]=positionArray[i-1]+positionArray[i+1]-positionArray[i]
+        #print("-----white(even) particles move-----")    
+        #print(positionArrayTemp)
+
+    result[t+1]=positionArrayTemp[noOfParticles-1]
+    resultMiddle[t+1]=positionArrayTemp[int((noOfParticles-1)/2)]
+    positionArray=positionArrayTemp.copy()
+    white = not white
+    black = not black
+# plot
+x=np.linspace(1,noOfEvolution+1,noOfEvolution+1)
+plt.figure(figsize=(10,6))
+plt.title("LONGITUDINAL VIBRATION OF A LONG UNIFORM ROD AT X=L/2")
+plt.xlabel("Non Dimensionl Time (t/T)")
+plt.ylabel("Non Dimensionl Displacement (u/$\\delta $)")
+
+plt.scatter((((x*TSF)/0.8)*1000),(((resultMiddle-0.5)/10)*1000000),facecolors='none',label="CA Solution",color='#FC766AFF')
+#(resultMiddle-0.5)*1000000
+#(((resultMiddle-0.5)/10)*1000000)
+plt.xlim(0,5)
+#plt.ylim(-6,6)
+
+print(x*(TSF*1000))
+print((resultMiddle-0.5)*1000000)
+
+#########################
+
+# Function to calculate u(t) for a given t, F, L, A, E, and c
+def u(t, F, L, A, E, c, terms=100):
+    result = 0
+    for n in range(terms):
+        term = ((-1) ** n) / ((2 * n + 1) ** 2)
+        term *= np.sin(((2 * n + 1) * np.pi * (L/2)) / (2 * L)) * np.cos(((2 * n + 1) * np.pi * c * t) / (2 * L))
+        result += term
+    result *= (8 * F * L) / (A * E * np.pi**2)
+    return result
+
+# Define constants
+F = 200  # Replace with your value
+L = 1  # Replace with your value
+A = 1/10000  # Replace with your value
+E = 200*1000000000  # Replace with your value
+c = np.sqrt(E/7860)  # Replace with your value
+
+# Generate t values
+t_values = np.linspace(0, 5, 10000)/1000
+
+# Calculate u(t) for each t
+u_values = u(t_values, F, L, A, E, c)
+
+# Plot the function
+plt.plot((t_values/0.8)*1000, (u_values/10)*1000000,label='Analytical Solution',color='#5B84B1FF')
+
+plt.grid()
+plt.legend(loc='upper right')
+plt.savefig('longitudinalVibrationHalfL.svg',format='svg')
+plt.show()
